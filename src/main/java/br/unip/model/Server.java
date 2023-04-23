@@ -30,24 +30,9 @@ public class Server extends Thread{
             try {
                 DatagramPacket datagramReceived = new DatagramPacket(buf, buf.length);
 
-                System.out.println("\nEsperando requisição do cliente ...");
-                socket.receive(datagramReceived);
+                Packet receivedPacket = receiveResolveRequest(datagramReceived);
 
-                InetAddress address = datagramReceived.getAddress();
-                int port = datagramReceived.getPort();
-
-                Packet receivedPacket = Packet.toPacket(datagramReceived.getData());
-                System.out.println("Pacote recebido com pedido de resolução para o ip: " + receivedPacket.getDnsIp());
-
-                leaveLoopIfAsked(receivedPacket.getDnsIp());
-
-                receivedPacket.setDnsUrl(dnsDictionary);
-                byte[] packetBack = receivedPacket.toByteArray();
-
-                DatagramPacket datagramSend = new DatagramPacket(packetBack, packetBack.length, address, port);
-                socket.send(datagramSend);
-                System.out.println("Enviando confirmação de recebimento para o cliente ...");
-
+                leaveLoopIfAsked(receivedPacket);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } catch (Exception e){
@@ -58,8 +43,32 @@ public class Server extends Thread{
         socket.close();
     }
 
-    private void leaveLoopIfAsked(String ip) throws Exception {
-        if (ip.equals("END")){
+    private Packet receiveResolveRequest(DatagramPacket datagramReceived) throws IOException {
+        System.out.println("\nEsperando requisição do cliente ...");
+        // Espera resposta do cliente
+        socket.receive(datagramReceived);
+
+        // Extrai o endereço ip e porta do cliente
+        InetAddress address = datagramReceived.getAddress();
+        int port = datagramReceived.getPort();
+
+        // Serializa o datagrama recebido para objeto Packet
+        byte[] datagramData = datagramReceived.getData();
+        Packet receivedPacket = Packet.toPacket(datagramData);
+        System.out.println("Pacote recebido com pedido de resolução para o ip: " + receivedPacket.getDnsIp());
+
+
+        receivedPacket.setDnsUrl(dnsDictionary);
+        byte[] packetBack = receivedPacket.toByteArray();
+
+        DatagramPacket datagramBackToClient = new DatagramPacket(packetBack, packetBack.length, address, port);
+        socket.send(datagramBackToClient);
+        System.out.println("Enviando confirmação de recebimento para o cliente ...");
+        return receivedPacket;
+    }
+
+    private void leaveLoopIfAsked(Packet packet) throws Exception {
+        if (packet.isAppCloseRequest()){
             throw new Exception();
         }
     }

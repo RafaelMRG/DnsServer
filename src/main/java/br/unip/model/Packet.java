@@ -32,11 +32,22 @@ public class Packet implements Serializable {
 
     public Packet setDnsUrl(HashMap<String, String> dnsDict) {
         String url = dnsDict.get(this.dnsIp);
+
+        if (this.dnsIp.equals("END")){
+            this.dnsUrl = "END";
+            return this;
+        }
+
         if (url == null){
             this.dnsUrl = "A URL para este ip ainda não foi registrada";
-        } else {
-            this.dnsUrl = url;
+            return this;
         }
+
+        this.dnsUrl = url;
         return this;
+    }
+
+    public boolean isAppCloseRequest(){
+        return this.dnsUrl.equals("END") || this.dnsIp.equals("END");
     }
 }
