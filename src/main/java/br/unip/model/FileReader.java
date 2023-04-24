@@ -1,6 +1,7 @@
 package br.unip.model;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,13 +13,25 @@ public class FileReader {
     public static HashMap<String, String> readDnsTable(){
         String fileName = "dns.txt";
         Path path = Paths.get("src/main/resources/", fileName);
-        File fileTxt;
+        Path path2 = Paths.get("", fileName);
 
+        File fileTxt;
+        Scanner scanner;
+
+        fileTxt = path.toFile();
         try {
-            fileTxt = path.toFile();
-            Scanner scanner = new Scanner(fileTxt);
-            return readLines(scanner);
+            scanner = new Scanner(fileTxt);
         } catch (IOException e) {
+            scanner = getFallbackScanner(path2);
+        }
+        return readLines(scanner);
+    }
+
+    private static Scanner getFallbackScanner(Path path){
+        File file = path.toFile();
+        try {
+            return new Scanner(file);
+        } catch (FileNotFoundException e){
             throw new RuntimeException(e);
         }
     }
